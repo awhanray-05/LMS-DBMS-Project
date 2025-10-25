@@ -17,8 +17,8 @@ const Layout = () => {
         <Header onMenuClick={() => setSidebarOpen(true)} />
         
         {/* Page content */}
-        <main className="py-4 sm:py-6">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+        <main className="py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Outlet />
           </div>
         </main>

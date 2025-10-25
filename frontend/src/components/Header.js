@@ -18,23 +18,23 @@ const Header = ({ onMenuClick }) => {
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
         {/* Left side */}
-        <div className="flex items-center min-w-0 flex-1">
+        <div className="flex items-center">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 flex-shrink-0"
+            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
           >
             <Menu className="h-6 w-6" />
           </button>
           
-          <div className="ml-2 lg:ml-0 min-w-0">
-            <h1 className="text-sm sm:text-lg lg:text-xl font-semibold text-gray-900 truncate">
+          <div className="ml-4 lg:ml-0">
+            <h1 className="text-xl font-semibold text-gray-900">
               Library Management System
             </h1>
           </div>
         </div>
 
         {/* Right side */}
-        <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+        <div className="flex items-center space-x-4">
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
@@ -59,8 +59,8 @@ const Header = ({ onMenuClick }) => {
 
           {/* User menu */}
           <div className="relative">
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="text-right hidden sm:block">
+            <div className="flex items-center space-x-3">
+              <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
                   {user?.firstName} {user?.lastName}
                 </p>
@@ -69,8 +69,8 @@ const Header = ({ onMenuClick }) => {
                 </p>
               </div>
               
-              <div className="flex items-center space-x-1 sm:space-x-2">
-                <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 hidden sm:block">
+              <div className="flex items-center space-x-2">
+                <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
                   <Settings className="h-5 w-5" />
                 </button>
                 

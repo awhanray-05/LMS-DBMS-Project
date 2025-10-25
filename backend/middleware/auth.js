@@ -57,7 +57,9 @@ const authenticateToken = async (req, res, next) => {
 
 // Middleware to check admin role
 const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'LIBRARIAN') {
+  const userRole = req.user.ROLE || req.user.role;
+  if (userRole !== 'SUPER_ADMIN' && userRole !== 'LIBRARIAN') {
+    console.log('Access denied. User role:', userRole, 'User object:', req.user);
     return res.status(403).json({ 
       success: false, 
       message: 'Admin access required' 
@@ -68,7 +70,8 @@ const requireAdmin = (req, res, next) => {
 
 // Middleware to check super admin role
 const requireSuperAdmin = (req, res, next) => {
-  if (req.user.role !== 'SUPER_ADMIN') {
+  const userRole = req.user.ROLE || req.user.role;
+  if (userRole !== 'SUPER_ADMIN') {
     return res.status(403).json({ 
       success: false, 
       message: 'Super admin access required' 

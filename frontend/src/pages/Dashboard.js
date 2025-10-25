@@ -40,37 +40,41 @@ const Dashboard = () => {
       // Fetch books count
       try {
         const booksResponse = await booksAPI.getBooks({ limit: 1 });
-        const booksData = booksResponse.data.data || booksResponse.data;
-        totalBooks = booksData.pagination?.totalItems || 0;
+        if (booksResponse?.data?.data?.pagination?.totalItems !== undefined) {
+          totalBooks = booksResponse.data.data.pagination.totalItems;
+        }
       } catch (err) {
-        console.warn('Could not fetch books:', err.message);
+        console.warn('Could not fetch books:', err?.message || err);
       }
 
       // Fetch members count
       try {
         const membersResponse = await membersAPI.getMembers({ limit: 1 });
-        const membersData = membersResponse.data.data || membersResponse.data;
-        totalMembers = membersData.pagination?.totalItems || 0;
+        if (membersResponse?.data?.data?.pagination?.totalItems !== undefined) {
+          totalMembers = membersResponse.data.data.pagination.totalItems;
+        }
       } catch (err) {
-        console.warn('Could not fetch members:', err.message);
+        console.warn('Could not fetch members:', err?.message || err);
       }
 
       // Fetch transactions count
       try {
         const transactionsResponse = await transactionsAPI.getTransactions({ limit: 1 });
-        const transactionsData = transactionsResponse.data.data || transactionsResponse.data;
-        activeTransactions = transactionsData.pagination?.totalItems || 0;
+        if (transactionsResponse?.data?.data?.pagination?.totalItems !== undefined) {
+          activeTransactions = transactionsResponse.data.data.pagination.totalItems;
+        }
       } catch (err) {
-        console.warn('Could not fetch transactions:', err.message);
+        console.warn('Could not fetch transactions:', err?.message || err);
       }
 
       // Fetch overdue books
       try {
         const overdueResponse = await transactionsAPI.getOverdueBooks();
-        const overdueData = overdueResponse.data.data || overdueResponse.data;
-        overdueBooksList = overdueData.overdueBooks || [];
+        if (overdueResponse?.data?.data?.overdueBooks) {
+          overdueBooksList = overdueResponse.data.data.overdueBooks;
+        }
       } catch (err) {
-        console.warn('Could not fetch overdue books:', err.message);
+        console.warn('Could not fetch overdue books:', err?.message || err);
       }
 
       setStats({
@@ -89,10 +93,11 @@ const Dashboard = () => {
           sortBy: 'transaction_id',
           sortOrder: 'DESC'
         });
-        const recentData = recentResponse.data.data || recentResponse.data;
-        setRecentTransactions(recentData.transactions || []);
+        if (recentResponse?.data?.data?.transactions) {
+          setRecentTransactions(recentResponse.data.data.transactions);
+        }
       } catch (err) {
-        console.warn('Could not fetch recent transactions:', err.message);
+        console.warn('Could not fetch recent transactions:', err?.message || err);
       }
 
     } catch (error) {
@@ -151,7 +156,7 @@ const Dashboard = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">
           Overview of your library management system
         </p>
@@ -213,22 +218,22 @@ const Dashboard = () => {
               {recentTransactions.length > 0 ? (
                 <div className="space-y-3">
                   {recentTransactions.map((transaction) => (
-                    <div key={transaction.transactionId} className="flex items-center justify-between gap-2">
-                      <div className="flex items-center min-w-0 flex-1">
+                    <div key={transaction.transactionId} className="flex items-center justify-between">
+                      <div className="flex items-center">
                         <div className="flex-shrink-0">
                           <BookOpen className="h-5 w-5 text-gray-400" />
                         </div>
-                        <div className="ml-3 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                        <div className="ml-3">
+                          <p className="text-sm font-medium text-gray-900">
                             {transaction.book.title}
                           </p>
-                          <p className="text-sm text-gray-500 truncate">
+                          <p className="text-sm text-gray-500">
                             {transaction.member.firstName} {transaction.member.lastName}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center flex-shrink-0">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
+                      <div className="flex items-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           transaction.status === 'ISSUED' 
                             ? 'bg-blue-100 text-blue-800'
                             : transaction.status === 'RETURNED'
@@ -258,25 +263,25 @@ const Dashboard = () => {
               {overdueBooks.length > 0 ? (
                 <div className="space-y-3">
                   {overdueBooks.map((book) => (
-                    <div key={book.transactionId} className="flex items-center justify-between gap-2">
-                      <div className="flex items-center min-w-0 flex-1">
+                    <div key={book.transactionId} className="flex items-center justify-between">
+                      <div className="flex items-center">
                         <div className="flex-shrink-0">
                           <AlertTriangle className="h-5 w-5 text-red-400" />
                         </div>
-                        <div className="ml-3 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                        <div className="ml-3">
+                          <p className="text-sm font-medium text-gray-900">
                             {book.book.title}
                           </p>
-                          <p className="text-sm text-gray-500 truncate">
+                          <p className="text-sm text-gray-500">
                             {book.member.firstName} {book.member.lastName}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-medium text-red-600 whitespace-nowrap">
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-red-600">
                           ${book.fineAmount}
                         </p>
-                        <p className="text-xs text-gray-500 whitespace-nowrap">
+                        <p className="text-xs text-gray-500">
                           Due: {new Date(book.dueDate).toLocaleDateString()}
                         </p>
                       </div>

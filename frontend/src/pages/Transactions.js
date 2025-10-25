@@ -41,12 +41,19 @@ const Transactions = () => {
       };
 
       const response = await transactionsAPI.getTransactions(params);
-      setTransactions(response.data.transactions);
-      setTotalPages(response.data.pagination.totalPages);
-      setTotalItems(response.data.pagination.totalItems);
+      
+      // Handle nested data structure
+      const data = response.data.data || response.data;
+      const transactionsData = data.transactions || [];
+      const paginationData = data.pagination || { totalPages: 1, totalItems: 0 };
+      
+      setTransactions(transactionsData);
+      setTotalPages(paginationData.totalPages);
+      setTotalItems(paginationData.totalItems);
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      toast.error('Failed to load transactions');
+      toast.error(error.response?.data?.message || 'Failed to load transactions');
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -98,7 +105,7 @@ const Transactions = () => {
       {/* Header */}
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Transactions</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
           <p className="mt-1 text-sm text-gray-500">
             Manage book transactions and returns
           </p>
@@ -106,7 +113,7 @@ const Transactions = () => {
         <div className="mt-4 sm:mt-0">
           <Link
             to="/transactions/issue"
-            className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <Plus className="h-4 w-4 mr-2" />
             Issue Book
@@ -116,23 +123,25 @@ const Transactions = () => {
 
       {/* Filters and Search */}
       <div className="bg-white p-4 rounded-lg shadow">
-        <form onSubmit={handleSearch} className="space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search transactions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            />
+        <form onSubmit={handleSearch} className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:space-x-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search transactions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex space-x-4">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
               <option value="">All Status</option>
               {statuses.map(status => (
@@ -142,7 +151,7 @@ const Transactions = () => {
 
             <button
               type="submit"
-              className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <Filter className="h-4 w-4 mr-2" />
               Filter
