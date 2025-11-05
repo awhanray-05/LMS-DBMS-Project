@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Books from './pages/Books';
@@ -49,6 +50,7 @@ function App() {
             />
             <Routes>
               {/* Public routes */}
+              <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/member-login" element={<MemberLogin />} />
               
@@ -56,25 +58,24 @@ function App() {
               <Route path="/member" element={<MemberDashboard />} />
               
               {/* Protected admin routes */}
-              <Route path="/" element={
+              <Route element={
                 <ProtectedRoute>
                   <Layout />
                 </ProtectedRoute>
               }>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="books" element={<Books />} />
-                <Route path="books/new" element={<BookForm />} />
-                <Route path="books/:id/edit" element={<BookForm />} />
-                <Route path="members" element={<Members />} />
-                <Route path="members/new" element={<MemberForm />} />
-                <Route path="members/:id/edit" element={<MemberForm />} />
-                <Route path="transactions" element={<Transactions />} />
-                <Route path="transactions/issue" element={<IssueBook />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/books" element={<Books />} />
+                <Route path="/books/new" element={<BookForm />} />
+                <Route path="/books/:id/edit" element={<BookForm />} />
+                <Route path="/members" element={<Members />} />
+                <Route path="/members/new" element={<MemberForm />} />
+                <Route path="/members/:id/edit" element={<MemberForm />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/transactions/issue" element={<IssueBook />} />
               </Route>
               
               {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
         </Router>

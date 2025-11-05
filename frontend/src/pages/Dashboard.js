@@ -22,9 +22,12 @@ const Dashboard = () => {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [overdueBooks, setOverdueBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
+    // Trigger animation after component mounts
+    setTimeout(() => setIsVisible(true), 100);
   }, []);
 
   const fetchDashboardData = async () => {
@@ -152,10 +155,34 @@ const Dashboard = () => {
     );
   }
 
+  // Number counter animation component
+  const AnimatedNumber = ({ value, duration = 1000 }) => {
+    const [displayValue, setDisplayValue] = useState(0);
+    
+    useEffect(() => {
+      let startTime = null;
+      const animate = (timestamp) => {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        setDisplayValue(Math.floor(easeOutQuart * value));
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setDisplayValue(value);
+        }
+      };
+      requestAnimationFrame(animate);
+    }, [value, duration]);
+    
+    return <>{displayValue}</>;
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       {/* Header */}
-      <div>
+      <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Overview of your library management system
@@ -164,7 +191,7 @@ const Dashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((card) => {
+        {statCards.map((card, index) => {
           const Icon = card.icon;
           const colorClasses = {
             blue: 'bg-blue-500 dark:bg-blue-600',
@@ -174,11 +201,17 @@ const Dashboard = () => {
           };
           
           return (
-            <div key={card.name} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div 
+              key={card.name} 
+              className={`bg-white dark:bg-gray-800 overflow-hidden shadow-lg rounded-lg transition-all duration-500 hover:shadow-xl hover:scale-105 hover:-translate-y-1 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: `${index * 100}ms` }}
+            >
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className={`p-3 rounded-md ${colorClasses[card.color]}`}>
+                    <div className={`p-3 rounded-md ${colorClasses[card.color]} transform transition-transform duration-300 hover:scale-110 hover:rotate-6`}>
                       <Icon className="h-6 w-6 text-white" />
                     </div>
                   </div>
@@ -189,11 +222,12 @@ const Dashboard = () => {
                       </dt>
                       <dd className="flex items-baseline">
                         <div className="text-2xl font-semibold text-gray-900 dark:text-white">
-                          {card.value}
+                          <AnimatedNumber value={card.value} />
                         </div>
-                        <div className={`ml-2 flex items-baseline text-sm font-semibold ${
+                        <div className={`ml-2 flex items-baseline text-sm font-semibold transition-all duration-300 ${
                           card.changeType === 'positive' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                         }`}>
+                          <TrendingUp className={`h-3 w-3 mr-1 ${card.changeType === 'positive' ? '' : 'rotate-180'}`} />
                           {card.change}
                         </div>
                       </dd>
@@ -209,19 +243,28 @@ const Dashboard = () => {
       {/* Content Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent Transactions */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg transition-all duration-500 hover:shadow-xl ${
+          isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+        }`} style={{ transitionDelay: '400ms' }}>
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white flex items-center">
+              <FileText className="h-5 w-5 mr-2 text-blue-500" />
               Recent Transactions
             </h3>
             <div className="mt-5">
               {recentTransactions.length > 0 ? (
                 <div className="space-y-3">
-                  {recentTransactions.map((transaction) => (
-                    <div key={transaction.transactionId} className="flex items-center justify-between">
+                  {recentTransactions.map((transaction, index) => (
+                    <div 
+                      key={transaction.transactionId} 
+                      className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md hover:scale-105 ${
+                        isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                      }`}
+                      style={{ transitionDelay: `${500 + index * 100}ms` }}
+                    >
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
-                          <BookOpen className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                          <BookOpen className="h-5 w-5 text-gray-400 dark:text-gray-500 transition-transform duration-300 hover:scale-110" />
                         </div>
                         <div className="ml-3">
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -233,7 +276,7 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <div className="flex items-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-300 hover:scale-110 ${
                           transaction.status === 'ISSUED' 
                             ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
                             : transaction.status === 'RETURNED'
@@ -254,19 +297,28 @@ const Dashboard = () => {
         </div>
 
         {/* Overdue Books */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div className={`bg-white dark:bg-gray-800 shadow-lg rounded-lg transition-all duration-500 hover:shadow-xl ${
+          isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+        }`} style={{ transitionDelay: '400ms' }}>
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2 text-red-500 animate-pulse" />
               Overdue Books
             </h3>
             <div className="mt-5">
               {overdueBooks.length > 0 ? (
                 <div className="space-y-3">
-                  {overdueBooks.map((book) => (
-                    <div key={book.transactionId} className="flex items-center justify-between">
+                  {overdueBooks.map((book, index) => (
+                    <div 
+                      key={book.transactionId} 
+                      className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:shadow-md hover:scale-105 border-l-4 border-red-500 ${
+                        isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+                      }`}
+                      style={{ transitionDelay: `${500 + index * 100}ms` }}
+                    >
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
-                          <AlertTriangle className="h-5 w-5 text-red-400 dark:text-red-500" />
+                          <AlertTriangle className="h-5 w-5 text-red-400 dark:text-red-500 transition-transform duration-300 hover:scale-110 animate-pulse" />
                         </div>
                         <div className="ml-3">
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -289,8 +341,8 @@ const Dashboard = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4">
-                  <CheckCircle className="mx-auto h-12 w-12 text-green-400 dark:text-green-500" />
+                <div className="text-center py-4 animate-fade-in">
+                  <CheckCircle className="mx-auto h-12 w-12 text-green-400 dark:text-green-500 animate-bounce" />
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No overdue books</p>
                 </div>
               )}

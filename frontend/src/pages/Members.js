@@ -24,9 +24,11 @@ const Members = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [sortBy, setSortBy] = useState('member_id');
   const [sortOrder, setSortOrder] = useState('ASC');
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     fetchMembers();
+    setTimeout(() => setIsVisible(true), 100);
   }, [currentPage, searchTerm, membershipTypeFilter, statusFilter, sortBy, sortOrder]);
 
   const fetchMembers = async () => {
@@ -112,9 +114,9 @@ const Members = () => {
   const statuses = ['ACTIVE', 'INACTIVE', 'SUSPENDED'];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       {/* Header */}
-      <div className="sm:flex sm:items-center sm:justify-between">
+      <div className={`sm:flex sm:items-center sm:justify-between transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Members</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -124,16 +126,16 @@ const Members = () => {
         <div className="mt-4 sm:mt-0">
           <Link
             to="/members/new"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105 hover:shadow-lg"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-2 transition-transform duration-300 group-hover:rotate-90" />
             Add Member
           </Link>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+      <div className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg transition-all duration-500 hover:shadow-xl ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '200ms' }}>
         <form onSubmit={handleSearch} className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:space-x-4">
           <div className="flex-1">
             <div className="relative">
@@ -217,8 +219,14 @@ const Members = () => {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {members.map((member) => (
-                  <tr key={member.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                {members.map((member, index) => (
+                  <tr 
+                    key={member.id} 
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 hover:shadow-md hover:scale-[1.01] ${
+                      isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                    }`}
+                    style={{ transitionDelay: `${400 + index * 50}ms` }}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
@@ -253,20 +261,20 @@ const Members = () => {
                       <div className="flex items-center space-x-2">
                         <Link
                           to={`/members/${member.id}/transactions`}
-                          className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
+                          className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 transition-all duration-300 hover:scale-110 transform"
                           title="View Transactions"
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
                         <Link
                           to={`/members/${member.id}/edit`}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 transition-all duration-300 hover:scale-110 transform"
                         >
                           <Edit className="h-4 w-4" />
                         </Link>
                         <button
                           onClick={() => handleDelete(member.id)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-all duration-300 hover:scale-110 transform"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

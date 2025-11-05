@@ -62,14 +62,14 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, onToggle }) => {
                   to={item.href}
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    `group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-300 transform hover:scale-105 hover:translate-x-1 ${
                       isActive
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200'
+                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 shadow-md'
                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                     }`
                   }
                 >
-                  <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                  <Icon className="mr-3 h-5 w-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
                   {item.name}
                 </NavLink>
               );

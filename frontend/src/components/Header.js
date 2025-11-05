@@ -1,8 +1,8 @@
 import React from 'react';
-import { Menu, Bell, User, LogOut, Settings, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Menu, LogOut, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import toast from 'react-hot-toast';
+import NotificationDropdown from './NotificationDropdown';
 
 const Header = ({ onMenuClick, onToggleSidebar, sidebarCollapsed }) => {
   const { user, logout } = useAuth();
@@ -61,9 +61,7 @@ const Header = ({ onMenuClick, onToggleSidebar, sidebarCollapsed }) => {
           </button>
 
           {/* Notifications */}
-          <button className="p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-            <Bell className="h-5 w-5" />
-          </button>
+          <NotificationDropdown />
 
           {/* User menu */}
           <div className="relative">
@@ -77,19 +75,13 @@ const Header = ({ onMenuClick, onToggleSidebar, sidebarCollapsed }) => {
                 </p>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <button className="p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Settings className="h-5 w-5" />
-                </button>
-                
-                <button
-                  onClick={handleLogout}
-                  className="p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  title="Logout"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                title="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>
