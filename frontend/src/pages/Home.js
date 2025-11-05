@@ -152,7 +152,7 @@ const Home = () => {
           <div className="text-center mb-20">
             <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
               <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient px-4">
-                Welcome to Your
+                Welcome to Digital Library
                 <br />
                 <span className="relative inline-block">
                   Digital Library
@@ -228,9 +228,9 @@ const Home = () => {
           {/* Stats Section */}
           <div className={`mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 transition-all duration-1000 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             {[
-              { number: '10K+', label: 'Books Available' },
-              { number: '5K+', label: 'Active Members' },
-              { number: '50K+', label: 'Transactions' },
+              { number: '2K+', label: 'Books Available' },
+              { number: '1K+', label: 'Active Members' },
+              { number: '3K+', label: 'Transactions' },
             ].map((stat, index) => (
               <div
                 key={index}
