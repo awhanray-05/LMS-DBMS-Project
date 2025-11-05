@@ -41,7 +41,16 @@ cd LMS-DBMS
 @backend/config/schema.sql
 ```
 
-This will create all necessary tables and insert sample data.
+#### 2.3 Run Database Migration (if upgrading existing database)
+
+If you have an existing database and need to add payment tracking columns to the `fine_history` table, run:
+
+```sql
+-- Run the migration script
+@backend/config/migrations/add_payment_columns.sql
+```
+
+This will add the Razorpay payment tracking columns to your existing `fine_history` table.
 
 ### Step 3: Backend Setup
 
@@ -64,7 +73,7 @@ npm install
    cp env.example .env
    ```
 
-2. Edit the `.env` file with your database credentials:
+2. Edit the `.env` file with your database credentials and Razorpay keys:
    ```env
    # Database Configuration
    DB_HOST=localhost
@@ -83,7 +92,18 @@ npm install
 
    # CORS Configuration
    FRONTEND_URL=http://localhost:3000
+
+   # Razorpay Configuration (for fine payments)
+   # Get these from https://dashboard.razorpay.com/app/keys
+   RAZORPAY_KEY_ID=your_razorpay_key_id
+   RAZORPAY_KEY_SECRET=your_razorpay_key_secret
    ```
+
+3. **Setting up Razorpay**:
+   - Sign up at https://razorpay.com/
+   - Go to Dashboard → Settings → API Keys
+   - For testing, use your Test Mode keys
+   - Copy the Key ID and Key Secret to your `.env` file
 
 #### 3.4 Start the Backend Server
 
@@ -371,6 +391,7 @@ If you encounter issues:
 - [ ] Member login working
 - [ ] Database connection successful
 - [ ] API endpoints responding
+- [ ] Razorpay credentials configured (for fine payments)
 
 ---
 

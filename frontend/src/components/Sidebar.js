@@ -7,7 +7,9 @@ import {
   FileText, 
   Plus,
   X,
-  Library
+  Library,
+  BarChart3,
+  BookMarked
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose, isCollapsed, onToggle }) => {
@@ -19,6 +21,8 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, onToggle }) => {
     { name: 'Add Member', href: '/members/new', icon: Plus },
     { name: 'Transactions', href: '/transactions', icon: FileText },
     { name: 'Issue Book', href: '/transactions/issue', icon: Library },
+    { name: 'Reservations', href: '/reservations', icon: BookMarked },
+    { name: 'Reports', href: '/reports', icon: BarChart3 },
   ];
 
   return (

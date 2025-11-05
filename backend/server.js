@@ -8,9 +8,11 @@ const { initializeDatabase, closePool } = require('./config/database');
 
 // Import routes
 const authRoutes = require('./routes/auth');
+const memberAuthRoutes = require('./routes/memberAuth');
 const bookRoutes = require('./routes/books');
 const memberRoutes = require('./routes/members');
 const transactionRoutes = require('./routes/transactions');
+const reservationRoutes = require('./routes/reservations');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -50,9 +52,11 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/member-auth', memberAuthRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/reservations', reservationRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -7,7 +7,8 @@ import {
   FileText,
   Filter,
   Eye,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 import { transactionsAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -67,8 +68,28 @@ const Transactions = () => {
         fetchTransactions();
       } catch (error) {
         console.error('Error returning book:', error);
-        toast.error('Failed to return book');
+        toast.error(error.response?.data?.message || 'Failed to return book');
       }
+    }
+  };
+
+  const handleRenewBook = async (transactionId) => {
+    const extensionDays = prompt('Enter number of days to extend (default: 14):', '14');
+    if (!extensionDays) return;
+    
+    const days = parseInt(extensionDays);
+    if (isNaN(days) || days <= 0) {
+      toast.error('Please enter a valid number of days');
+      return;
+    }
+
+    try {
+      const response = await transactionsAPI.renewBook(transactionId, { extension_days: days });
+      toast.success(`Book renewed successfully. New due date: ${response.data.data.newDueDate}`);
+      fetchTransactions();
+    } catch (error) {
+      console.error('Error renewing book:', error);
+      toast.error(error.response?.data?.message || 'Failed to renew book');
     }
   };
 
@@ -248,18 +269,45 @@ const Transactions = () => {
                       {getStatusBadge(transaction.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {transaction.fineAmount > 0 ? `$${transaction.fineAmount.toFixed(2)}` : 'N/A'}
+                      {transaction.fineAmount > 0 ? `Rs${transaction.fineAmount.toFixed(2)}` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         {transaction.status === 'ISSUED' && (
-                          <button
-                            onClick={() => handleReturnBook(transaction.transactionId)}
-                            className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
-                            title="Return Book"
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleRenewBook(transaction.transactionId)}
+                              className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300"
+                              title="Renew Book"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleReturnBook(transaction.transactionId)}
+                              className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
+                              title="Return Book"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                        {transaction.status === 'OVERDUE' && (
+                          <>
+                            <button
+                              onClick={() => handleRenewBook(transaction.transactionId)}
+                              className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300"
+                              title="Renew Book"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleReturnBook(transaction.transactionId)}
+                              className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
+                              title="Return Book"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </button>
+                          </>
                         )}
                         <Link
                           to={`/transactions/${transaction.transactionId}`}

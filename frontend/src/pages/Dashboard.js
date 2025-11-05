@@ -331,7 +331,7 @@ const Dashboard = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                          ${book.fineAmount}
+                          Rs{book.fineAmount}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           Due: {new Date(book.dueDate).toLocaleDateString()}

@@ -13,7 +13,9 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Check if it's a member auth endpoint
+    const isMemberAuth = config.url?.includes('/member-auth');
+    const token = localStorage.getItem(isMemberAuth ? 'memberToken' : 'token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -30,17 +32,37 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Only redirect if it's not the login endpoint
-      const isLoginEndpoint = error.config?.url?.includes('/auth/login');
+      const isLoginEndpoint = error.config?.url?.includes('/auth/login') || 
+                               error.config?.url?.includes('/member-auth/login');
       if (!isLoginEndpoint) {
         console.error('Unauthorized access, redirecting to login');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+        const isMemberAuth = error.config?.url?.includes('/member-auth');
+        if (isMemberAuth) {
+          localStorage.removeItem('memberToken');
+          localStorage.removeItem('member');
+          window.location.href = '/member-login';
+        } else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
   }
 );
+
+// Member Auth API
+export const memberAuthAPI = {
+  login: (credentials) => api.post('/member-auth/login', credentials),
+  getProfile: () => api.get('/member-auth/profile'),
+  changePassword: (data) => api.put('/member-auth/change-password', data),
+  getBorrowedBooks: () => api.get('/member-auth/borrowed-books'),
+  getFineHistory: () => api.get('/member-auth/fines'),
+  getReservations: () => api.get('/member-auth/reservations'),
+  createPaymentOrder: (fineId) => api.post('/member-auth/payments/create-order', { fine_id: fineId }),
+  verifyPayment: (paymentData) => api.post('/member-auth/payments/verify', paymentData),
+};
 
 // Auth API
 export const authAPI = {
@@ -77,8 +99,19 @@ export const transactionsAPI = {
   getOverdueBooks: () => api.get('/transactions/overdue'),
   issueBook: (data) => api.post('/transactions/issue', data),
   returnBook: (transactionId) => api.put(`/transactions/return/${transactionId}`),
+  renewBook: (transactionId, data) => api.put(`/transactions/renew/${transactionId}`, data),
   getFineHistory: (memberId) => api.get(`/transactions/fines/${memberId}`),
   payFine: (fineId) => api.put(`/transactions/fines/${fineId}/pay`),
+  getAnalytics: () => api.get('/transactions/analytics'),
+};
+
+// Reservations API
+export const reservationsAPI = {
+  createReservation: (data) => api.post('/reservations', data),
+  getReservations: (params) => api.get('/reservations', { params }),
+  getMemberReservations: (memberId) => api.get(`/reservations/member/${memberId}`),
+  cancelReservation: (reservationId) => api.put(`/reservations/cancel/${reservationId}`),
+  fulfillReservation: (reservationId) => api.put(`/reservations/fulfill/${reservationId}`),
 };
 
 // Dashboard API

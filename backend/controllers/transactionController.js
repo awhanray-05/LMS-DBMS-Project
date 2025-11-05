@@ -186,7 +186,7 @@ const returnBook = async (req, res) => {
 
     if (returnDate > dueDate) {
       const daysOverdue = Math.ceil((returnDate - dueDate) / (1000 * 60 * 60 * 24));
-      fineAmount = daysOverdue * 1; // $1 per day fine
+      fineAmount = daysOverdue * 1; // Rs1 per day fine
     }
 
     // Update transaction
@@ -497,11 +497,206 @@ const payFine = async (req, res) => {
   }
 };
 
+// Renew a book (extend due date)
+const renewBook = async (req, res) => {
+  try {
+    const { transaction_id } = req.params;
+    const { extension_days = 14 } = req.body;
+    const connection = await getConnection();
+
+    // Get transaction details
+    const transactionResult = await connection.execute(
+      `SELECT transaction_id, member_id, book_id, issue_date, due_date, status, 
+              (SELECT COUNT(*) FROM transactions WHERE member_id = t.member_id AND book_id = t.book_id AND status IN ('ISSUED', 'OVERDUE')) as renewal_count
+       FROM transactions t WHERE transaction_id = :transaction_id`,
+      { transaction_id }
+    );
+
+    if (transactionResult.rows.length === 0) {
+      await connection.close();
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+
+    const transaction = transactionResult.rows[0];
+
+    if (transaction.STATUS !== 'ISSUED' && transaction.STATUS !== 'OVERDUE') {
+      await connection.close();
+      return res.status(400).json({
+        success: false,
+        message: 'Only issued or overdue books can be renewed'
+      });
+    }
+
+    // Check if already renewed too many times (max 2 renewals)
+    if (transaction.RENEWAL_COUNT >= 2) {
+      await connection.close();
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum renewal limit reached for this book'
+      });
+    }
+
+    // Calculate new due date
+    const currentDueDate = new Date(transaction.DUE_DATE);
+    const newDueDate = new Date(currentDueDate.getTime() + extension_days * 24 * 60 * 60 * 1000);
+
+    // Update transaction with new due date
+    await connection.execute(
+      `UPDATE transactions SET 
+         due_date = :new_due_date,
+         status = CASE 
+           WHEN :new_due_date < SYSDATE THEN 'OVERDUE'
+           ELSE 'ISSUED'
+         END,
+         updated_at = CURRENT_TIMESTAMP
+       WHERE transaction_id = :transaction_id`,
+      {
+        new_due_date: newDueDate,
+        transaction_id
+      }
+    );
+
+    await connection.close();
+
+    res.json({
+      success: true,
+      message: 'Book renewed successfully',
+      data: { 
+        newDueDate: newDueDate.toISOString().split('T')[0],
+        extensionDays: extension_days
+      }
+    });
+  } catch (error) {
+    console.error('Renew book error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to renew book',
+      error: error.message
+    });
+  }
+};
+
+// Get analytics/reports data
+const getAnalytics = async (req, res) => {
+  try {
+    const connection = await getConnection();
+
+    // Get popular books
+    const popularBooksResult = await connection.execute(
+      `SELECT b.book_id, b.title, b.author, COUNT(t.transaction_id) as borrow_count
+       FROM books b
+       LEFT JOIN transactions t ON b.book_id = t.book_id
+       GROUP BY b.book_id, b.title, b.author
+       ORDER BY borrow_count DESC
+       FETCH FIRST 10 ROWS ONLY`
+    );
+
+    // Get member activity
+    const memberActivityResult = await connection.execute(
+      `SELECT m.member_id, m.first_name || ' ' || m.last_name as name, 
+              COUNT(t.transaction_id) as transaction_count
+       FROM members m
+       LEFT JOIN transactions t ON m.member_id = t.member_id
+       GROUP BY m.member_id, m.first_name, m.last_name
+       ORDER BY transaction_count DESC
+       FETCH FIRST 10 ROWS ONLY`
+    );
+
+    // Get category distribution
+    const categoryDistributionResult = await connection.execute(
+      `SELECT category, COUNT(*) as book_count
+       FROM books
+       WHERE category IS NOT NULL
+       GROUP BY category
+       ORDER BY book_count DESC`
+    );
+
+    // Get monthly transactions
+    const monthlyTransactionsResult = await connection.execute(
+      `SELECT TO_CHAR(issue_date, 'YYYY-MM') as month, COUNT(*) as count
+       FROM transactions
+       WHERE issue_date >= ADD_MONTHS(SYSDATE, -12)
+       GROUP BY TO_CHAR(issue_date, 'YYYY-MM')
+       ORDER BY month`
+    );
+
+    // Get fine statistics
+    const fineStatsResult = await connection.execute(
+      `SELECT 
+         SUM(CASE WHEN status = 'PENDING' THEN fine_amount ELSE 0 END) as pending_fines,
+         SUM(CASE WHEN status = 'PAID' THEN fine_amount ELSE 0 END) as paid_fines,
+         COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_count,
+         COUNT(CASE WHEN status = 'PAID' THEN 1 END) as paid_count
+       FROM fine_history`
+    );
+
+    await connection.close();
+
+    const popularBooks = popularBooksResult.rows.map(row => ({
+      bookId: row.BOOK_ID,
+      title: row.TITLE,
+      author: row.AUTHOR,
+      borrowCount: row.BORROW_COUNT
+    }));
+
+    const memberActivity = memberActivityResult.rows.map(row => ({
+      memberId: row.MEMBER_ID,
+      name: row.NAME,
+      transactionCount: row.TRANSACTION_COUNT
+    }));
+
+    const categoryDistribution = categoryDistributionResult.rows.map(row => ({
+      category: row.CATEGORY,
+      bookCount: row.BOOK_COUNT
+    }));
+
+    const monthlyTransactions = monthlyTransactionsResult.rows.map(row => ({
+      month: row.MONTH,
+      count: row.COUNT
+    }));
+
+    const fineStats = fineStatsResult.rows[0] ? {
+      pendingFines: fineStatsResult.rows[0].PENDING_FINES || 0,
+      paidFines: fineStatsResult.rows[0].PAID_FINES || 0,
+      pendingCount: fineStatsResult.rows[0].PENDING_COUNT || 0,
+      paidCount: fineStatsResult.rows[0].PAID_COUNT || 0
+    } : {
+      pendingFines: 0,
+      paidFines: 0,
+      pendingCount: 0,
+      paidCount: 0
+    };
+
+    res.json({
+      success: true,
+      data: {
+        popularBooks,
+        memberActivity,
+        categoryDistribution,
+        monthlyTransactions,
+        fineStats
+      }
+    });
+  } catch (error) {
+    console.error('Get analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch analytics',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   issueBook,
   returnBook,
   getTransactions,
   getOverdueBooks,
   getFineHistory,
-  payFine
+  payFine,
+  renewBook,
+  getAnalytics
 };

@@ -6,79 +6,116 @@ import {
   AlertTriangle, 
   CheckCircle,
   LogOut,
-  User,
-  DollarSign
+  DollarSign,
+  CreditCard
 } from 'lucide-react';
+import { memberAuthAPI } from '../services/api';
+import { openRazorpayCheckout } from '../services/paymentService';
 import toast from 'react-hot-toast';
 
 const MemberDashboard = () => {
   const navigate = useNavigate();
   const [memberSession, setMemberSession] = useState(null);
+  const [memberInfo, setMemberInfo] = useState(null);
   const [borrowedBooks, setBorrowedBooks] = useState([]);
   const [fineHistory, setFineHistory] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState({});
 
   useEffect(() => {
     checkMemberSession();
     setTimeout(() => setIsVisible(true), 100);
   }, []);
 
-  const checkMemberSession = () => {
-    const session = localStorage.getItem('memberSession');
-    if (!session) {
+  const checkMemberSession = async () => {
+    const memberToken = localStorage.getItem('memberToken');
+    const memberData = localStorage.getItem('member');
+    
+    if (!memberToken || !memberData) {
       navigate('/member-login');
       return;
     }
 
     try {
-      const sessionData = JSON.parse(session);
-      setMemberSession(sessionData);
-      fetchMemberData(sessionData.email);
+      const memberInfo = JSON.parse(memberData);
+      setMemberSession(memberInfo);
+      
+      // If password hasn't been changed, redirect to password change
+      if (!memberInfo.passwordChanged) {
+        navigate('/member/change-password');
+        return;
+      }
+      
+      // Fetch member profile using authenticated API
+      try {
+        const profileResponse = await memberAuthAPI.getProfile();
+        const profileData = profileResponse.data.data;
+        setMemberInfo(profileData);
+        
+        // Fetch member data (will use authenticated member ID automatically)
+        fetchMemberData();
+      } catch (error) {
+        console.error('Error fetching member profile:', error);
+        // If profile fetch fails, try using stored member ID
+        if (memberInfo.id) {
+          setMemberInfo(memberInfo);
+          fetchMemberData();
+        } else {
+          toast.error('Failed to load member profile. Please login again.');
+          localStorage.removeItem('memberToken');
+          localStorage.removeItem('member');
+          navigate('/member-login');
+        }
+      }
     } catch (error) {
       console.error('Error parsing member session:', error);
-      localStorage.removeItem('memberSession');
+      localStorage.removeItem('memberToken');
+      localStorage.removeItem('member');
       navigate('/member-login');
     }
   };
 
-  const fetchMemberData = async (email) => {
+  const fetchMemberData = async () => {
     try {
       setLoading(true);
       
-      // Simulate API calls for member data
-      // In a real app, these would be actual API calls
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock data for demonstration
-      setBorrowedBooks([
-        {
-          id: 1,
-          title: 'Effective Java',
-          author: 'Joshua Bloch',
-          issueDate: '2024-01-15',
-          dueDate: '2024-01-29',
-          status: 'ISSUED'
-        },
-        {
-          id: 2,
-          title: 'Clean Code',
-          author: 'Robert C. Martin',
-          issueDate: '2024-01-20',
-          dueDate: '2024-02-03',
-          status: 'OVERDUE'
-        }
-      ]);
+      // Fetch borrowed books using member auth API
+      try {
+        const borrowedResponse = await memberAuthAPI.getBorrowedBooks();
+        const borrowedData = borrowedResponse.data?.data?.borrowedBooks || [];
+        setBorrowedBooks(borrowedData.map(book => ({
+          ...book,
+          id: book.transactionId,
+          title: book.book?.title || book.title,
+          author: book.book?.author || book.author,
+          issueDate: book.issueDate,
+          dueDate: book.dueDate,
+          status: book.dueDate && new Date(book.dueDate) < new Date() ? 'OVERDUE' : 'ISSUED'
+        })));
+      } catch (error) {
+        console.error('Error fetching borrowed books:', error);
+        setBorrowedBooks([]);
+      }
 
-      setFineHistory([
-        {
-          id: 1,
-          amount: 5.00,
-          reason: 'Late return',
-          status: 'PENDING',
-          dueDate: '2024-01-29'
-        }
-      ]);
+      // Fetch fine history using member auth API
+      try {
+        const fineResponse = await memberAuthAPI.getFineHistory();
+        setFineHistory(fineResponse.data?.data?.fineHistory || []);
+      } catch (error) {
+        console.error('Error fetching fine history:', error);
+        setFineHistory([]);
+      }
+
+      // Fetch reservations using member auth API
+      try {
+        const reservationsResponse = await memberAuthAPI.getReservations();
+        setReservations(reservationsResponse.data?.data?.reservations || []);
+      } catch (error) {
+        console.error('Error fetching reservations:', error);
+        setReservations([]);
+      }
 
     } catch (error) {
       console.error('Error fetching member data:', error);
@@ -88,8 +125,62 @@ const MemberDashboard = () => {
     }
   };
 
+  const handlePayFine = async (fineId, fineAmount) => {
+    if (!fineId) {
+      toast.error('Cannot pay fine yet. Please return the book first to generate the fine.');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to pay Rs${fineAmount.toFixed(2)}?`)) {
+      return;
+    }
+
+    try {
+      setProcessingPayment(prev => ({ ...prev, [fineId]: true }));
+
+      // Step 1: Create Razorpay order
+      const orderResponse = await memberAuthAPI.createPaymentOrder(fineId);
+      const { orderId, amount, amountInPaise, currency, keyId } = orderResponse.data.data;
+
+      // Step 2: Open Razorpay checkout
+      const paymentResponse = await openRazorpayCheckout({
+        keyId: keyId,
+        amount: amountInPaise, // Use amount in paise from backend
+        currency: currency || 'INR',
+        orderId: orderId,
+        name: 'Library Management System',
+        description: `Fine Payment - Rs${amount}`,
+        customerName: memberInfo ? `${memberInfo.firstName} ${memberInfo.lastName}` : memberSession?.email,
+        customerEmail: memberInfo?.email || memberSession?.email
+      });
+
+      // Step 3: Verify payment with backend
+      const verifyResponse = await memberAuthAPI.verifyPayment({
+        fine_id: fineId,
+        razorpay_order_id: paymentResponse.razorpay_order_id,
+        razorpay_payment_id: paymentResponse.razorpay_payment_id,
+        razorpay_signature: paymentResponse.razorpay_signature
+      });
+
+      toast.success('Fine paid successfully!');
+      
+      // Refresh fine history
+      const fineResponse = await memberAuthAPI.getFineHistory();
+      setFineHistory(fineResponse.data?.data?.fineHistory || []);
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      if (error.message === 'Payment cancelled by user') {
+        toast.error('Payment was cancelled');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to process payment. Please try again.');
+      }
+    } finally {
+      setProcessingPayment(prev => ({ ...prev, [fineId]: false }));
+    }
+  };
+
   const handleLogout = () => {
-    localStorage.removeItem('memberSession');
+    localStorage.removeItem('memberToken');
+    localStorage.removeItem('member');
     navigate('/member-login');
     toast.success('Logged out successfully');
   };
@@ -145,7 +236,7 @@ const MemberDashboard = () => {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {memberSession?.email}
+                  {memberInfo ? `${memberInfo.firstName} ${memberInfo.lastName}` : memberSession?.email}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Member</p>
               </div>
@@ -169,7 +260,7 @@ const MemberDashboard = () => {
               {[
                 { name: 'Books Borrowed', value: borrowedBooks.length, icon: BookOpen, color: 'blue' },
                 { name: 'Overdue Books', value: borrowedBooks.filter(book => book.status === 'OVERDUE').length, icon: AlertTriangle, color: 'red' },
-                { name: 'Pending Fines', value: `$${fineHistory.filter(fine => fine.status === 'PENDING').reduce((sum, fine) => sum + fine.amount, 0).toFixed(2)}`, icon: DollarSign, color: 'yellow' },
+                { name: 'Pending Fines', value: `Rs${fineHistory.filter(fine => fine.status === 'PENDING').reduce((sum, fine) => sum + (fine.fineAmount || 0), 0).toFixed(2)}`, icon: DollarSign, color: 'yellow' },
               ].map((stat, index) => {
                 const Icon = stat.icon;
                 return (
@@ -224,7 +315,7 @@ const MemberDashboard = () => {
                   <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                     {borrowedBooks.map((book, index) => (
                       <li 
-                        key={book.id} 
+                        key={book.id || book.transactionId} 
                         className={`px-4 py-4 sm:px-6 transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md hover:scale-[1.01] ${
                           isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                         }`}
@@ -236,20 +327,20 @@ const MemberDashboard = () => {
                               <BookOpen className="h-8 w-8 text-gray-400" />
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {book.title}
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {book.book?.title || book.title}
                               </div>
-                              <div className="text-sm text-gray-500">
-                                by {book.author}
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                by {book.book?.author || book.author}
                               </div>
-                              <div className="text-xs text-gray-400">
+                              <div className="text-xs text-gray-400 dark:text-gray-500">
                                 Issued: {new Date(book.issueDate).toLocaleDateString()}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-4">
                             <div className="text-right">
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
                                 Due: {new Date(book.dueDate).toLocaleDateString()}
                               </div>
                               {getStatusBadge(book.status)}
@@ -262,8 +353,8 @@ const MemberDashboard = () => {
                 ) : (
                   <div className="text-center py-12">
                     <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No borrowed books</h3>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No borrowed books</h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                       You don't have any books borrowed at the moment.
                     </p>
                   </div>
@@ -287,7 +378,7 @@ const MemberDashboard = () => {
                   <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                     {fineHistory.map((fine, index) => (
                       <li 
-                        key={fine.id} 
+                        key={fine.fineId} 
                         className={`px-4 py-4 sm:px-6 transition-all duration-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 hover:shadow-md hover:scale-[1.01] border-l-4 border-yellow-500 ${
                           isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
                         }`}
@@ -299,19 +390,48 @@ const MemberDashboard = () => {
                               <DollarSign className="h-8 w-8 text-yellow-400" />
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                ${fine.amount.toFixed(2)}
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                Rs{fine.fineAmount?.toFixed(2) || '0.00'}
                               </div>
-                              <div className="text-sm text-gray-500">
-                                {fine.reason}
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                {fine.fineReason || 'Fine'}
                               </div>
-                              <div className="text-xs text-gray-400">
-                                Due: {new Date(fine.dueDate).toLocaleDateString()}
+                              <div className="text-xs text-gray-400 dark:text-gray-500">
+                                {fine.isCalculated ? 'Due date: ' : 'Created: '}{new Date(fine.createdAt || fine.transaction?.dueDate).toLocaleDateString()}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-4">
                             {getFineStatusBadge(fine.status)}
+                            {fine.status === 'PENDING' && (
+                              <button
+                                onClick={() => handlePayFine(fine.fineId, fine.fineAmount)}
+                                disabled={processingPayment[fine.fineId] || !fine.fineId || fine.isCalculated}
+                                className={`inline-flex items-center px-3 py-1 text-sm font-medium text-white rounded-md transition-all duration-300 hover:scale-105 ${
+                                  processingPayment[fine.fineId] || !fine.fineId || fine.isCalculated
+                                    ? 'opacity-50 cursor-not-allowed bg-gray-500'
+                                    : 'bg-green-600 hover:bg-green-700'
+                                }`}
+                                title={!fine.fineId || fine.isCalculated ? 'Return the book first to pay this fine' : ''}
+                              >
+                                {processingPayment[fine.fineId] ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                                    Processing...
+                                  </>
+                                ) : !fine.fineId || fine.isCalculated ? (
+                                  <>
+                                    <Clock className="h-4 w-4 mr-1" />
+                                    Return book first
+                                  </>
+                                ) : (
+                                  <>
+                                    <CreditCard className="h-4 w-4 mr-1" />
+                                    Pay Rs{fine.fineAmount?.toFixed(2) || '0.00'}
+                                  </>
+                                )}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </li>
@@ -320,8 +440,8 @@ const MemberDashboard = () => {
                 ) : (
                   <div className="text-center py-12">
                     <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No fines</h3>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No fines</h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                       You don't have any fines at the moment.
                     </p>
                   </div>

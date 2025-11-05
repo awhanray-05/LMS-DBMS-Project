@@ -16,6 +16,9 @@ import Transactions from './pages/Transactions';
 import IssueBook from './pages/IssueBook';
 import MemberLogin from './pages/MemberLogin';
 import MemberDashboard from './pages/MemberDashboard';
+import MemberChangePassword from './pages/MemberChangePassword';
+import Reports from './pages/Reports';
+import Reservations from './pages/Reservations';
 import './App.css';
 
 function App() {
@@ -56,6 +59,7 @@ function App() {
               
               {/* Member routes */}
               <Route path="/member" element={<MemberDashboard />} />
+              <Route path="/member/change-password" element={<MemberChangePassword />} />
               
               {/* Protected admin routes */}
               <Route element={
@@ -72,6 +76,8 @@ function App() {
                 <Route path="/members/:id/edit" element={<MemberForm />} />
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/transactions/issue" element={<IssueBook />} />
+                <Route path="/reservations" element={<Reservations />} />
+                <Route path="/reports" element={<Reports />} />
               </Route>
               
               {/* Catch all route */}

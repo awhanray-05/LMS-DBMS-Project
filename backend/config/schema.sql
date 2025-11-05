@@ -72,6 +72,10 @@ CREATE TABLE fine_history (
     fine_reason VARCHAR2(100),
     paid_date DATE,
     status VARCHAR2(20) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PAID', 'WAIVED')),
+    razorpay_order_id VARCHAR2(100),
+    razorpay_payment_id VARCHAR2(100),
+    razorpay_signature VARCHAR2(255),
+    payment_date TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) ON DELETE CASCADE,
     FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { Library, Eye, EyeOff, Loader, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { memberAuthAPI } from '../services/api';
 
 const MemberLogin = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -22,20 +25,24 @@ const MemberLogin = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      // For now, we'll simulate member login
-      // In a real app, this would call a member login API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await memberAuthAPI.login(data);
+      const { token, member } = response.data.data;
       
-      // Store member session (simplified)
-      localStorage.setItem('memberSession', JSON.stringify({
-        email: data.email,
-        loginTime: new Date().toISOString()
-      }));
+      // Store member session
+      localStorage.setItem('memberToken', token);
+      localStorage.setItem('member', JSON.stringify(member));
       
       toast.success('Member login successful!');
-      window.location.href = '/member';
+      
+      // If password hasn't been changed, redirect to password change page
+      if (!member.passwordChanged) {
+        navigate('/member/change-password');
+      } else {
+        navigate('/member');
+      }
     } catch (error) {
-      toast.error('Login failed. Please try again.');
+      const message = error.response?.data?.message || 'Login failed. Please try again.';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

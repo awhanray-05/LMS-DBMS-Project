@@ -68,6 +68,71 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+// Middleware to verify member JWT token
+const authenticateMemberToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Access token required' 
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if token is for a member
+    if (decoded.type !== 'member') {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid token type' 
+      });
+    }
+
+    // Verify member still exists in database
+    const connection = await getConnection();
+    const result = await connection.execute(
+      `SELECT member_id, email, status FROM members 
+       WHERE member_id = :member_id AND status = 'ACTIVE'`,
+      { member_id: decoded.memberId }
+    );
+    await connection.close();
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid token or member not found' 
+      });
+    }
+
+    req.member = {
+      id: result.rows[0].MEMBER_ID,
+      email: result.rows[0].EMAIL
+    };
+    next();
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid token' 
+      });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token expired' 
+      });
+    }
+    console.error('Member auth middleware error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Authentication error' 
+    });
+  }
+};
+
 // Middleware to check super admin role
 const requireSuperAdmin = (req, res, next) => {
   const userRole = req.user.ROLE || req.user.role;
@@ -82,6 +147,7 @@ const requireSuperAdmin = (req, res, next) => {
 
 module.exports = {
   authenticateToken,
+  authenticateMemberToken,
   requireAdmin,
   requireSuperAdmin
 };

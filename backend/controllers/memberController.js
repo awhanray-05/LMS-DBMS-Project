@@ -1,5 +1,7 @@
 const { getConnection } = require('../config/database');
 const oracledb = require('oracledb');
+const bcrypt = require('bcryptjs');
+const { sendMemberCreationEmail } = require('../utils/emailService');
 
 // Get all members with pagination and search
 const getMembers = async (req, res) => {
@@ -143,6 +145,17 @@ const getMemberById = async (req, res) => {
   }
 };
 
+// Generate a random temporary password
+const generateTemporaryPassword = () => {
+  // Generate an 8-character password with mixed case letters and numbers
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let password = '';
+  for (let i = 0; i < 8; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+};
+
 // Create new member
 const createMember = async (req, res) => {
   try {
@@ -171,9 +184,13 @@ const createMember = async (req, res) => {
       });
     }
 
+    // Generate temporary password and hash it
+    const temporaryPassword = generateTemporaryPassword();
+    const passwordHash = await bcrypt.hash(temporaryPassword, 10);
+
     const result = await connection.execute(
-      `INSERT INTO members (first_name, last_name, email, phone, address, membership_type)
-       VALUES (:first_name, :last_name, :email, :phone, :address, :membership_type)
+      `INSERT INTO members (first_name, last_name, email, phone, address, membership_type, password_hash, password_changed)
+       VALUES (:first_name, :last_name, :email, :phone, :address, :membership_type, :password_hash, 0)
        RETURNING member_id INTO :member_id`,
       {
         first_name,
@@ -182,6 +199,7 @@ const createMember = async (req, res) => {
         phone: phone || null,
         address: address || null,
         membership_type: membership_type || 'STUDENT',
+        password_hash: passwordHash,
         member_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
       }
     );
@@ -189,9 +207,25 @@ const createMember = async (req, res) => {
     const memberId = result.outBinds.member_id[0];
     await connection.close();
 
+    // Send email with credentials (non-blocking)
+    const memberName = `${first_name} ${last_name}`;
+    sendMemberCreationEmail(email, memberName, temporaryPassword)
+      .then(result => {
+        if (result.success && !result.skipped) {
+          console.log(`Email sent successfully to ${email}`);
+        } else if (result.skipped) {
+          console.log(`Email skipped (no email config). Credentials: ${email} / ${temporaryPassword}`);
+        } else {
+          console.error(`Failed to send email to ${email}:`, result.error);
+        }
+      })
+      .catch(error => {
+        console.error(`Error sending email to ${email}:`, error);
+      });
+
     res.status(201).json({
       success: true,
-      message: 'Member created successfully',
+      message: 'Member created successfully. Login credentials have been sent to the member\'s email.',
       data: { memberId }
     });
   } catch (error) {
