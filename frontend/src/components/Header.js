@@ -1,10 +1,10 @@
 import React from 'react';
-import { Menu, Bell, User, LogOut, Settings } from 'lucide-react';
+import { Menu, Bell, User, LogOut, Settings, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import toast from 'react-hot-toast';
 
-const Header = ({ onMenuClick }) => {
+const Header = ({ onMenuClick, onToggleSidebar, sidebarCollapsed }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
@@ -15,19 +15,27 @@ const Header = ({ onMenuClick }) => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
         {/* Left side */}
         <div className="flex items-center">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+            className="lg:hidden p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <Menu className="h-6 w-6" />
           </button>
           
-          <div className="ml-4 lg:ml-0">
-            <h1 className="text-xl font-semibold text-gray-900">
+          <button
+            onClick={onToggleSidebar}
+            className="hidden lg:block p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+          >
+            {sidebarCollapsed ? <PanelLeft className="h-6 w-6" /> : <PanelLeftClose className="h-6 w-6" />}
+          </button>
+          
+          <div className="ml-4">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
               Library Management System
             </h1>
           </div>
@@ -38,7 +46,7 @@ const Header = ({ onMenuClick }) => {
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+            className="p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
             {theme === 'light' ? (
@@ -53,7 +61,7 @@ const Header = ({ onMenuClick }) => {
           </button>
 
           {/* Notifications */}
-          <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
+          <button className="p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
             <Bell className="h-5 w-5" />
           </button>
 
@@ -61,22 +69,22 @@ const Header = ({ onMenuClick }) => {
           <div className="relative">
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-xs text-gray-500 capitalize">
+                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
                   {user?.role?.toLowerCase().replace('_', ' ')}
                 </p>
               </div>
               
               <div className="flex items-center space-x-2">
-                <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
+                <button className="p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                   <Settings className="h-5 w-5" />
                 </button>
                 
                 <button
                   onClick={handleLogout}
-                  className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                  className="p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                   title="Logout"
                 >
                   <LogOut className="h-5 w-5" />

@@ -153,11 +153,11 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Overview of your library management system
         </p>
       </div>
@@ -167,14 +167,14 @@ const Dashboard = () => {
         {statCards.map((card) => {
           const Icon = card.icon;
           const colorClasses = {
-            blue: 'bg-blue-500',
-            green: 'bg-green-500',
-            purple: 'bg-purple-500',
-            red: 'bg-red-500'
+            blue: 'bg-blue-500 dark:bg-blue-600',
+            green: 'bg-green-500 dark:bg-green-600',
+            purple: 'bg-purple-500 dark:bg-purple-600',
+            red: 'bg-red-500 dark:bg-red-600'
           };
           
           return (
-            <div key={card.name} className="bg-white overflow-hidden shadow rounded-lg">
+            <div key={card.name} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -184,15 +184,15 @@ const Dashboard = () => {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                         {card.name}
                       </dt>
                       <dd className="flex items-baseline">
-                        <div className="text-2xl font-semibold text-gray-900">
+                        <div className="text-2xl font-semibold text-gray-900 dark:text-white">
                           {card.value}
                         </div>
                         <div className={`ml-2 flex items-baseline text-sm font-semibold ${
-                          card.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                          card.changeType === 'positive' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                         }`}>
                           {card.change}
                         </div>
@@ -209,9 +209,9 @@ const Dashboard = () => {
       {/* Content Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent Transactions */}
-        <div className="bg-white shadow rounded-lg">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
               Recent Transactions
             </h3>
             <div className="mt-5">
@@ -221,13 +221,13 @@ const Dashboard = () => {
                     <div key={transaction.transactionId} className="flex items-center justify-between">
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
-                          <BookOpen className="h-5 w-5 text-gray-400" />
+                          <BookOpen className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                         </div>
                         <div className="ml-3">
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
                             {transaction.book.title}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             {transaction.member.firstName} {transaction.member.lastName}
                           </p>
                         </div>
@@ -235,10 +235,10 @@ const Dashboard = () => {
                       <div className="flex items-center">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           transaction.status === 'ISSUED' 
-                            ? 'bg-blue-100 text-blue-800'
+                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
                             : transaction.status === 'RETURNED'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                            ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                            : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
                         }`}>
                           {transaction.status}
                         </span>
@@ -247,16 +247,16 @@ const Dashboard = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No recent transactions</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No recent transactions</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Overdue Books */}
-        <div className="bg-white shadow rounded-lg">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
               Overdue Books
             </h3>
             <div className="mt-5">
@@ -266,22 +266,22 @@ const Dashboard = () => {
                     <div key={book.transactionId} className="flex items-center justify-between">
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
-                          <AlertTriangle className="h-5 w-5 text-red-400" />
+                          <AlertTriangle className="h-5 w-5 text-red-400 dark:text-red-500" />
                         </div>
                         <div className="ml-3">
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
                             {book.book.title}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             {book.member.firstName} {book.member.lastName}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-red-600">
+                        <p className="text-sm font-medium text-red-600 dark:text-red-400">
                           ${book.fineAmount}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           Due: {new Date(book.dueDate).toLocaleDateString()}
                         </p>
                       </div>
@@ -290,8 +290,8 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
-                  <p className="mt-2 text-sm text-gray-500">No overdue books</p>
+                  <CheckCircle className="mx-auto h-12 w-12 text-green-400 dark:text-green-500" />
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No overdue books</p>
                 </div>
               )}
             </div>

@@ -43,7 +43,7 @@ const IssueBook = () => {
   const fetchMemberDetails = async (id) => {
     try {
       const response = await membersAPI.getMemberById(id);
-      setSelectedMember(response.data);
+      setSelectedMember(response.data.data);
     } catch (error) {
       console.error('Error fetching member:', error);
       setSelectedMember(null);
@@ -53,7 +53,7 @@ const IssueBook = () => {
   const fetchBookDetails = async (id) => {
     try {
       const response = await booksAPI.getBookById(id);
-      setSelectedBook(response.data);
+      setSelectedBook(response.data.data);
     } catch (error) {
       console.error('Error fetching book:', error);
       setSelectedBook(null);
@@ -72,10 +72,11 @@ const IssueBook = () => {
         search: query, 
         limit: 10 
       });
-      setMembers(response.data.members);
+      setMembers(response.data.data.members || []);
     } catch (error) {
       console.error('Error searching members:', error);
       toast.error('Failed to search members');
+      setMembers([]);
     } finally {
       setLoading(false);
     }
@@ -93,10 +94,11 @@ const IssueBook = () => {
         search: query, 
         limit: 10 
       });
-      setBooks(response.data.books);
+      setBooks(response.data.data.books || []);
     } catch (error) {
       console.error('Error searching books:', error);
       toast.error('Failed to search books');
+      setBooks([]);
     } finally {
       setLoading(false);
     }
@@ -132,17 +134,22 @@ const IssueBook = () => {
     try {
       setSaving(true);
       
-      // Calculate due date (default 14 days from now)
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 14);
-      data.due_date = dueDate.toISOString().split('T')[0];
+      // Calculate due date only if not provided (default 14 days from now)
+      if (!data.due_date) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 14);
+        data.due_date = dueDate.toISOString().split('T')[0];
+      }
 
+      console.log('Submitting issue book request:', data);
       await transactionsAPI.issueBook(data);
       toast.success('Book issued successfully');
       navigate('/transactions');
     } catch (error) {
       console.error('Error issuing book:', error);
-      toast.error('Failed to issue book');
+      console.error('Error response:', error.response?.data);
+      const errorMessage = error.response?.data?.message || 'Failed to issue book';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -151,7 +158,7 @@ const IssueBook = () => {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4">
         <button
           onClick={() => navigate('/transactions')}
           className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
@@ -191,7 +198,7 @@ const IssueBook = () => {
               </div>
 
               {/* Member Search Results */}
-              {members.length > 0 && (
+              {members && members.length > 0 && (
                 <div className="mt-2 border border-gray-200 rounded-md max-h-60 overflow-y-auto">
                   {members.map((member) => (
                     <div
@@ -254,7 +261,7 @@ const IssueBook = () => {
               </div>
 
               {/* Book Search Results */}
-              {books.length > 0 && (
+              {books && books.length > 0 && (
                 <div className="mt-2 border border-gray-200 rounded-md max-h-60 overflow-y-auto">
                   {books.map((book) => (
                     <div
@@ -311,6 +318,11 @@ const IssueBook = () => {
                   {...register('due_date', { required: 'Due date is required' })}
                   type="date"
                   min={new Date().toISOString().split('T')[0]}
+                  defaultValue={(() => {
+                    const date = new Date();
+                    date.setDate(date.getDate() + 14);
+                    return date.toISOString().split('T')[0];
+                  })()}
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
                 {errors.due_date && (

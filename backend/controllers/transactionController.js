@@ -3,9 +3,23 @@ const oracledb = require('oracledb');
 
 // Issue a book
 const issueBook = async (req, res) => {
+  let connection;
   try {
-    const { member_id, book_id, due_date } = req.body;
-    const connection = await getConnection();
+    // Parse and validate input
+    const member_id = parseInt(req.body.member_id);
+    const book_id = parseInt(req.body.book_id);
+    const due_date = req.body.due_date;
+    
+    console.log('Issue book request:', { member_id, book_id, due_date });
+    
+    if (isNaN(member_id) || isNaN(book_id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid member ID or book ID'
+      });
+    }
+    
+    connection = await getConnection();
 
     // Check if member exists and is active
     const memberResult = await connection.execute(
@@ -75,7 +89,13 @@ const issueBook = async (req, res) => {
     }
 
     // Calculate due date (default 14 days from now)
-    const calculatedDueDate = due_date || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    let calculatedDueDate;
+    if (due_date) {
+      // Convert string date to JavaScript Date object
+      calculatedDueDate = new Date(due_date);
+    } else {
+      calculatedDueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    }
 
     // Create transaction
     const transactionResult = await connection.execute(
@@ -99,6 +119,7 @@ const issueBook = async (req, res) => {
       { book_id }
     );
 
+    await connection.commit();
     await connection.close();
 
     res.status(201).json({
@@ -108,6 +129,17 @@ const issueBook = async (req, res) => {
     });
   } catch (error) {
     console.error('Issue book error:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Close connection if it was opened
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeError) {
+        console.error('Error closing connection:', closeError);
+      }
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Failed to issue book',
