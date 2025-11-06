@@ -17,6 +17,7 @@ import IssueBook from './pages/IssueBook';
 import MemberLogin from './pages/MemberLogin';
 import MemberDashboard from './pages/MemberDashboard';
 import MemberChangePassword from './pages/MemberChangePassword';
+import MemberBooks from './pages/MemberBooks';
 import Reports from './pages/Reports';
 import Reservations from './pages/Reservations';
 import './App.css';
@@ -60,6 +61,7 @@ function App() {
               {/* Member routes */}
               <Route path="/member" element={<MemberDashboard />} />
               <Route path="/member/change-password" element={<MemberChangePassword />} />
+              <Route path="/member/books" element={<MemberBooks />} />
               
               {/* Protected admin routes */}
               <Route element={

@@ -7,7 +7,10 @@ import {
   CheckCircle,
   LogOut,
   DollarSign,
-  CreditCard
+  CreditCard,
+  BookMarked,
+  X,
+  Library
 } from 'lucide-react';
 import { memberAuthAPI } from '../services/api';
 import { openRazorpayCheckout } from '../services/paymentService';
@@ -185,6 +188,36 @@ const MemberDashboard = () => {
     toast.success('Logged out successfully');
   };
 
+  const handleCancelReservation = async (reservationId) => {
+    if (!window.confirm('Are you sure you want to cancel this reservation?')) {
+      return;
+    }
+
+    try {
+      await memberAuthAPI.cancelReservation(reservationId);
+      toast.success('Reservation cancelled successfully');
+      fetchMemberData();
+    } catch (error) {
+      console.error('Error cancelling reservation:', error);
+      toast.error(error.response?.data?.message || 'Failed to cancel reservation');
+    }
+  };
+
+  const getReservationStatusBadge = (status) => {
+    const statusClasses = {
+      PENDING: 'bg-yellow-100 text-yellow-800',
+      AVAILABLE: 'bg-green-100 text-green-800',
+      CANCELLED: 'bg-gray-100 text-gray-800',
+      FULFILLED: 'bg-blue-100 text-blue-800'
+    };
+
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClasses[status] || 'bg-gray-100 text-gray-800'}`}>
+        {status}
+      </span>
+    );
+  };
+
   const getStatusBadge = (status) => {
     const statusClasses = {
       ISSUED: 'bg-blue-100 text-blue-800',
@@ -255,12 +288,32 @@ const MemberDashboard = () => {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="space-y-6">
+            {/* Quick Actions */}
+            <div className={`bg-white dark:bg-gray-800 shadow-lg overflow-hidden sm:rounded-md transition-all duration-500 hover:shadow-xl mb-6 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '200ms' }}>
+              <div className="px-4 py-5 sm:px-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white flex items-center">
+                  <Library className="h-5 w-5 mr-2 text-blue-500" />
+                  Quick Actions
+                </h3>
+              </div>
+              <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-4">
+                <button
+                  onClick={() => navigate('/member/books')}
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                >
+                  <BookOpen className="h-5 w-5 mr-2" />
+                  Browse & Reserve Books
+                </button>
+              </div>
+            </div>
+
             {/* Stats */}
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
               {[
                 { name: 'Books Borrowed', value: borrowedBooks.length, icon: BookOpen, color: 'blue' },
                 { name: 'Overdue Books', value: borrowedBooks.filter(book => book.status === 'OVERDUE').length, icon: AlertTriangle, color: 'red' },
                 { name: 'Pending Fines', value: `Rs${fineHistory.filter(fine => fine.status === 'PENDING').reduce((sum, fine) => sum + (fine.fineAmount || 0), 0).toFixed(2)}`, icon: DollarSign, color: 'yellow' },
+                { name: 'Reservations', value: reservations.filter(r => r.status === 'PENDING' || r.status === 'AVAILABLE').length, icon: BookMarked, color: 'purple' },
               ].map((stat, index) => {
                 const Icon = stat.icon;
                 return (
@@ -277,7 +330,8 @@ const MemberDashboard = () => {
                           <div className={`p-3 rounded-md transform transition-transform duration-300 hover:scale-110 hover:rotate-6 ${
                             stat.color === 'blue' ? 'bg-blue-500' :
                             stat.color === 'red' ? 'bg-red-500' :
-                            'bg-yellow-500'
+                            stat.color === 'yellow' ? 'bg-yellow-500' :
+                            'bg-purple-500'
                           }`}>
                             <Icon className="h-6 w-6 text-white" />
                           </div>
@@ -443,6 +497,79 @@ const MemberDashboard = () => {
                     <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No fines</h3>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                       You don't have any fines at the moment.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Reservations */}
+            <div className={`bg-white dark:bg-gray-800 shadow-lg overflow-hidden sm:rounded-md transition-all duration-500 hover:shadow-xl ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: '600ms' }}>
+              <div className="px-4 py-5 sm:px-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white flex items-center">
+                  <BookMarked className="h-5 w-5 mr-2 text-purple-500" />
+                  My Reservations
+                </h3>
+                <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                  Books you have reserved
+                </p>
+              </div>
+              <div className="border-t border-gray-200 dark:border-gray-700">
+                {reservations.length > 0 ? (
+                  <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {reservations.map((reservation, index) => (
+                      <li 
+                        key={reservation.reservationId} 
+                        className={`px-4 py-4 sm:px-6 transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md hover:scale-[1.01] ${
+                          isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                        }`}
+                        style={{ transitionDelay: `${700 + index * 100}ms` }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center flex-1">
+                            <div className="flex-shrink-0">
+                              <BookMarked className="h-8 w-8 text-purple-400" />
+                            </div>
+                            <div className="ml-4 flex-1">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {reservation.book?.title || 'Unknown Book'}
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                by {reservation.book?.author || 'Unknown Author'}
+                              </div>
+                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                Reserved: {new Date(reservation.reservationDate).toLocaleDateString()}
+                                {reservation.expiryDate && (
+                                  <> • Expires: {new Date(reservation.expiryDate).toLocaleDateString()}</>
+                                )}
+                                {reservation.status === 'AVAILABLE' && reservation.book?.availableCopies > 0 && (
+                                  <span className="ml-2 text-green-600 dark:text-green-400 font-medium">• Book is now available!</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-4">
+                            {getReservationStatusBadge(reservation.status)}
+                            {(reservation.status === 'PENDING' || reservation.status === 'AVAILABLE') && (
+                              <button
+                                onClick={() => handleCancelReservation(reservation.reservationId)}
+                                className="inline-flex items-center px-3 py-1 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-300 hover:scale-105"
+                                title="Cancel Reservation"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-center py-12">
+                    <BookMarked className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No reservations</h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      You don't have any book reservations at the moment.
                     </p>
                   </div>
                 )}

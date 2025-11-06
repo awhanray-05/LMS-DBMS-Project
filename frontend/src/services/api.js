@@ -60,6 +60,10 @@ export const memberAuthAPI = {
   getBorrowedBooks: () => api.get('/member-auth/borrowed-books'),
   getFineHistory: () => api.get('/member-auth/fines'),
   getReservations: () => api.get('/member-auth/reservations'),
+  createReservation: (bookId) => api.post('/member-auth/reservations', { book_id: bookId }),
+  cancelReservation: (reservationId) => api.put(`/member-auth/reservations/cancel/${reservationId}`),
+  getBooks: (params) => api.get('/member-auth/books', { params }),
+  getBookById: (id) => api.get(`/member-auth/books/${id}`),
   createPaymentOrder: (fineId) => api.post('/member-auth/payments/create-order', { fine_id: fineId }),
   verifyPayment: (paymentData) => api.post('/member-auth/payments/verify', paymentData),
 };

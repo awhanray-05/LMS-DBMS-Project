@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { memberLogin, changeMemberPassword, getMemberProfile, getMyBorrowedBooks, getMyFineHistory, getMyReservations } = require('../controllers/memberAuthController');
+const { memberLogin, changeMemberPassword, getMemberProfile, getMyBorrowedBooks, getMyFineHistory, getMyReservations, createMyReservation, cancelMyReservation, getMemberBooks, getMemberBookById } = require('../controllers/memberAuthController');
 const paymentRoutes = require('./payments');
 const { authenticateMemberToken } = require('../middleware/auth');
 const { body } = require('express-validator');
@@ -39,6 +39,10 @@ router.put('/change-password', validateChangePassword, changeMemberPassword);
 router.get('/borrowed-books', getMyBorrowedBooks);
 router.get('/fines', getMyFineHistory);
 router.get('/reservations', getMyReservations);
+router.post('/reservations', [body('book_id').notEmpty().withMessage('Book ID is required'), handleValidationErrors], createMyReservation);
+router.put('/reservations/cancel/:reservation_id', cancelMyReservation);
+router.get('/books', getMemberBooks);
+router.get('/books/:id', getMemberBookById);
 
 // Payment routes
 router.use('/payments', paymentRoutes);

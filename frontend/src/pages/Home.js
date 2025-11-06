@@ -252,7 +252,7 @@ const Home = () => {
       <footer className="relative z-10 px-6 py-8 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-gray-600 dark:text-gray-400">
-            © 2025 Library Management System. Built with ❤️.
+            © 2025 Library Management System. Made with ❤️.
           </p>
         </div>
       </footer>
