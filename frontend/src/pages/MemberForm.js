@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Save, Loader } from 'lucide-react';
+import { ArrowLeft, Save, Loader, Code } from 'lucide-react';
 import { membersAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import SQLVisualizationModal from '../components/SQLVisualizationModal';
 import toast from 'react-hot-toast';
 
 const MemberForm = () => {
@@ -12,13 +13,15 @@ const MemberForm = () => {
   const isEdit = Boolean(id);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
+  const [showSQLModal, setShowSQLModal] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     setValue,
-    reset
+    reset,
+    watch
   } = useForm();
 
   useEffect(() => {
@@ -254,28 +257,46 @@ const MemberForm = () => {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-between items-center">
           <button
             type="button"
-            onClick={() => navigate('/members')}
-            className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onClick={() => setShowSQLModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            Cancel
+            <Code className="h-4 w-4 mr-2" />
+            Visualize SQL
           </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? (
-              <Loader className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            {saving ? 'Saving...' : (isEdit ? 'Update Member' : 'Create Member')}
-          </button>
+          <div className="flex space-x-3">
+            <button
+              type="button"
+              onClick={() => navigate('/members')}
+              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? (
+                <Loader className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {saving ? 'Saving...' : (isEdit ? 'Update Member' : 'Create Member')}
+            </button>
+          </div>
         </div>
       </form>
+
+      {/* SQL Visualization Modal */}
+      <SQLVisualizationModal
+        isOpen={showSQLModal}
+        onClose={() => setShowSQLModal(false)}
+        operation={isEdit ? 'UPDATE_MEMBER' : 'CREATE_MEMBER'}
+        data={{ ...watch(), id: isEdit ? id : undefined }}
+      />
     </div>
   );
 };

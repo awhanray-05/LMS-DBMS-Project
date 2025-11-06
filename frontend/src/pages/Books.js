@@ -7,10 +7,12 @@ import {
   Trash2, 
   BookOpen,
   Filter,
-  MoreHorizontal
+  MoreHorizontal,
+  Code
 } from 'lucide-react';
 import { booksAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import SQLVisualizationModal from '../components/SQLVisualizationModal';
 import toast from 'react-hot-toast';
 
 const Books = () => {
@@ -25,6 +27,8 @@ const Books = () => {
   const [sortBy, setSortBy] = useState('book_id');
   const [sortOrder, setSortOrder] = useState('ASC');
   const [isVisible, setIsVisible] = useState(false);
+  const [showSQLModal, setShowSQLModal] = useState(false);
+  const [selectedBookForSQL, setSelectedBookForSQL] = useState(null);
 
   useEffect(() => {
     fetchBooks();
@@ -258,8 +262,19 @@ const Books = () => {
                           <Edit className="h-4 w-4" />
                         </Link>
                         <button
+                          onClick={() => {
+                            setSelectedBookForSQL(book);
+                            setShowSQLModal(true);
+                          }}
+                          className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 transition-all duration-300 hover:scale-110 transform"
+                          title="Visualize SQL for Delete"
+                        >
+                          <Code className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => handleDelete(book.id)}
                           className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-all duration-300 hover:scale-110 transform"
+                          title="Delete Book"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -362,6 +377,17 @@ const Books = () => {
           </div>
         </div>
       )}
+
+      {/* SQL Visualization Modal */}
+      <SQLVisualizationModal
+        isOpen={showSQLModal}
+        onClose={() => {
+          setShowSQLModal(false);
+          setSelectedBookForSQL(null);
+        }}
+        operation="DELETE_BOOK"
+        data={selectedBookForSQL ? { id: selectedBookForSQL.id } : null}
+      />
     </div>
   );
 };

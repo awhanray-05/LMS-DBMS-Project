@@ -7,10 +7,12 @@ import {
   Trash2, 
   Users,
   Filter,
-  Eye
+  Eye,
+  Code
 } from 'lucide-react';
 import { membersAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import SQLVisualizationModal from '../components/SQLVisualizationModal';
 import toast from 'react-hot-toast';
 
 const Members = () => {
@@ -25,6 +27,8 @@ const Members = () => {
   const [sortBy, setSortBy] = useState('member_id');
   const [sortOrder, setSortOrder] = useState('ASC');
   const [isVisible, setIsVisible] = useState(false);
+  const [showSQLModal, setShowSQLModal] = useState(false);
+  const [selectedMemberForSQL, setSelectedMemberForSQL] = useState(null);
 
   useEffect(() => {
     fetchMembers();
@@ -273,8 +277,19 @@ const Members = () => {
                           <Edit className="h-4 w-4" />
                         </Link>
                         <button
+                          onClick={() => {
+                            setSelectedMemberForSQL(member);
+                            setShowSQLModal(true);
+                          }}
+                          className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 transition-all duration-300 hover:scale-110 transform"
+                          title="Visualize SQL for Delete"
+                        >
+                          <Code className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => handleDelete(member.id)}
                           className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-all duration-300 hover:scale-110 transform"
+                          title="Delete Member"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -377,6 +392,17 @@ const Members = () => {
           </div>
         </div>
       )}
+
+      {/* SQL Visualization Modal */}
+      <SQLVisualizationModal
+        isOpen={showSQLModal}
+        onClose={() => {
+          setShowSQLModal(false);
+          setSelectedMemberForSQL(null);
+        }}
+        operation="DELETE_MEMBER"
+        data={selectedMemberForSQL ? { id: selectedMemberForSQL.id } : null}
+      />
     </div>
   );
 };

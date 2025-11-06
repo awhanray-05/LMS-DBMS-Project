@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Save, Loader, Search } from 'lucide-react';
+import { ArrowLeft, Save, Loader, Search, Code } from 'lucide-react';
 import { membersAPI, booksAPI, transactionsAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import SQLVisualizationModal from '../components/SQLVisualizationModal';
 import toast from 'react-hot-toast';
 
 const IssueBook = () => {
@@ -16,6 +17,7 @@ const IssueBook = () => {
   const [selectedBook, setSelectedBook] = useState(null);
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [bookSearchTerm, setBookSearchTerm] = useState('');
+  const [showSQLModal, setShowSQLModal] = useState(false);
 
   const {
     register,
@@ -334,28 +336,57 @@ const IssueBook = () => {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-between items-center">
           <button
             type="button"
-            onClick={() => navigate('/transactions')}
-            className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onClick={() => setShowSQLModal(true)}
+            disabled={!selectedMember || !selectedBook}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Cancel
+            <Code className="h-4 w-4 mr-2" />
+            Visualize SQL
           </button>
-          <button
-            type="submit"
-            disabled={saving || !selectedMember || !selectedBook}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? (
-              <Loader className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            {saving ? 'Issuing...' : 'Issue Book'}
-          </button>
+          <div className="flex space-x-3">
+            <button
+              type="button"
+              onClick={() => navigate('/transactions')}
+              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving || !selectedMember || !selectedBook}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? (
+                <Loader className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {saving ? 'Issuing...' : 'Issue Book'}
+            </button>
+          </div>
         </div>
       </form>
+
+      {/* SQL Visualization Modal */}
+      <SQLVisualizationModal
+        isOpen={showSQLModal}
+        onClose={() => setShowSQLModal(false)}
+        operation="ISSUE_BOOK"
+        data={{
+          member_id: selectedMember?.id,
+          book_id: selectedBook?.id,
+          due_date: (() => {
+            const dueDate = watch('due_date');
+            if (dueDate) return dueDate;
+            const date = new Date();
+            date.setDate(date.getDate() + 14);
+            return date.toISOString().split('T')[0];
+          })()
+        }}
+      />
     </div>
   );
 };

@@ -8,10 +8,12 @@ import {
   Filter,
   Eye,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Code
 } from 'lucide-react';
 import { transactionsAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import SQLVisualizationModal from '../components/SQLVisualizationModal';
 import toast from 'react-hot-toast';
 
 const Transactions = () => {
@@ -24,6 +26,9 @@ const Transactions = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [sortBy, setSortBy] = useState('transaction_id');
   const [sortOrder, setSortOrder] = useState('DESC');
+  const [showSQLModal, setShowSQLModal] = useState(false);
+  const [selectedTransactionForSQL, setSelectedTransactionForSQL] = useState(null);
+  const [sqlOperation, setSqlOperation] = useState(null);
 
   useEffect(() => {
     fetchTransactions();
@@ -276,11 +281,33 @@ const Transactions = () => {
                         {transaction.status === 'ISSUED' && (
                           <>
                             <button
+                              onClick={() => {
+                                setSelectedTransactionForSQL(transaction);
+                                setSqlOperation('RENEW_BOOK');
+                                setShowSQLModal(true);
+                              }}
+                              className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300"
+                              title="Visualize SQL for Renew"
+                            >
+                              <Code className="h-4 w-4" />
+                            </button>
+                            <button
                               onClick={() => handleRenewBook(transaction.transactionId)}
                               className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300"
                               title="Renew Book"
                             >
                               <RefreshCw className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedTransactionForSQL(transaction);
+                                setSqlOperation('RETURN_BOOK');
+                                setShowSQLModal(true);
+                              }}
+                              className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
+                              title="Visualize SQL for Return"
+                            >
+                              <Code className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleReturnBook(transaction.transactionId)}
@@ -294,11 +321,33 @@ const Transactions = () => {
                         {transaction.status === 'OVERDUE' && (
                           <>
                             <button
+                              onClick={() => {
+                                setSelectedTransactionForSQL(transaction);
+                                setSqlOperation('RENEW_BOOK');
+                                setShowSQLModal(true);
+                              }}
+                              className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300"
+                              title="Visualize SQL for Renew"
+                            >
+                              <Code className="h-4 w-4" />
+                            </button>
+                            <button
                               onClick={() => handleRenewBook(transaction.transactionId)}
                               className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300"
                               title="Renew Book"
                             >
                               <RefreshCw className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedTransactionForSQL(transaction);
+                                setSqlOperation('RETURN_BOOK');
+                                setShowSQLModal(true);
+                              }}
+                              className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
+                              title="Visualize SQL for Return"
+                            >
+                              <Code className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleReturnBook(transaction.transactionId)}
@@ -415,6 +464,22 @@ const Transactions = () => {
           </div>
         </div>
       )}
+
+      {/* SQL Visualization Modal */}
+      <SQLVisualizationModal
+        isOpen={showSQLModal}
+        onClose={() => {
+          setShowSQLModal(false);
+          setSelectedTransactionForSQL(null);
+          setSqlOperation(null);
+        }}
+        operation={sqlOperation}
+        data={selectedTransactionForSQL ? {
+          transaction_id: selectedTransactionForSQL.transactionId,
+          fine_amount: selectedTransactionForSQL.fineAmount || 0,
+          extension_days: 14
+        } : null}
+      />
     </div>
   );
 };
